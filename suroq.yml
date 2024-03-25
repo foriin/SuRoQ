@@ -1,0 +1,12 @@
+name: SUROQ
+channels:
+        - conda-forge
+        - bioconda
+dependencies:
+        - bowtie=1.3.1
+        - samtools=1.6
+        - bedtools=2.30.0
+        - r-base=4.1.3
+        - r-ggplot2
+        - r-gridextra
+        - r-ggseqlogo

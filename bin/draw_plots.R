@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
 
+# Suppress warnings
+options(warn=-1)
+
 args <- commandArgs(trailingOnly = TRUE)
 
 # Check if sufficient arguments are provided
