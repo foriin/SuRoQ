@@ -111,4 +111,4 @@ grid.arrange(
   p5,
   ncol = 2
 )
-dev.off()
+bye_little_message <- dev.off()

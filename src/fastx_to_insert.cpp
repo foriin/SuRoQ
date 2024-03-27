@@ -13,6 +13,33 @@ using namespace std;
 #define GZIP_MAGIC "\037\213"
 #define BZIP2_MAGIC "BZ"
 
+bool isValidExtension(const std::string& filename) {
+	size_t dotPos = filename.find_last_of(".");
+	if (dotPos == std::string::npos) {
+		return false;
+	}
+	
+	std::string ext = filename.substr(dotPos + 1);
+	std::string baseExt; // Base extension without possible compression extension
+
+	// Check for compression extension
+	if (ext == "gz" || ext == "bz2") {
+		size_t secondDotPos = filename.find_last_of(".", dotPos - 1);
+		if (secondDotPos == std::string::npos) {
+			return false;
+		}
+		baseExt = filename.substr(secondDotPos + 1, dotPos - secondDotPos - 1);
+	} else {
+		baseExt = ext;
+	}
+
+	// Convert baseExt to lowercase just in case
+	std::transform(baseExt.begin(), baseExt.end(), baseExt.begin(),
+			[](unsigned char c) { return std::tolower(c); });
+	// Check if baseExt if one of the supported extensions
+	return baseExt == "fq" || baseExt == "fastq" || baseExt == "fa" || baseExt == "fasta";
+}
+
 int main(int argc, char** argv) {
     string usage = R"(
 usage:
@@ -24,6 +51,10 @@ usage:
         return EXIT_FAILURE;
     }
     string input_fastx_file{argv[1]};
+    if (!isValidExtension(input_fastx_file)) {
+	    cerr << "Input file has an invalid extension!" << endl;
+	    return EXIT_FAILURE;
+    }
     std::ios::sync_with_stdio(false);
     istream* p_ist_in{&std::cin};
     if (input_fastx_file != "stdin" && input_fastx_file != "-") {
