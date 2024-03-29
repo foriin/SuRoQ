@@ -1,7 +1,7 @@
 # SuRoQ (Small RNA Quality) - a pipeline for quick and dirty QC of your small RNA (piRNA-oriented) sequencing data
-SuRoQ requires only your demultiplexed and adapter-trimmed reads in FASTQ or FASTA format (change extensions to .fq or .fa, respectively), genome assembly FASTA and TE consensus sequences FASTA. It produces three kinds of plots:
+SuRoQ requires only your demultiplexed and adapter-trimmed reads in FASTQ or FASTA format (gzip and bz2 compression are supported), genome assembly FASTA and TE consensus sequences FASTA. It produces three kinds of plots:
 - Reads size distribution for those that mapped to genome and TEs (NOT mutually exclusive!). For TEs red bars designate sense-mapped reads, and blue bars refer to antisense-mapped reads.
-- SeqLogo plots for sense and antisense TE-mapped reads, useful for validating the U1- and A10-bias.
+- WebLogo (seqLogo) plots for sense and antisense TE-mapped reads, useful for validating the U1- and A10-bias.
 - Ping-pong signature with Z score for 10-nt overlap indicated in the title.
   
 <img src=https://github.com/foriin/SuRoQ/blob/main/example/suroq_output.png width="600">
@@ -34,5 +34,10 @@ Run SuRoQ with:
 The last two parameters are optional but you have to specify both if you want to set only the output directory name. I will work on improving arguments handling pretty soon.
 After completion, you will find the plot in the `plots` directory and all the files used for its generation in the `tables` directory.
 
-Disclaimer: This software tool is currently under development. Users assume all risks related to its use.
+### Tips
+- Run SuRoQ for all your samples using the same output directory. That way, it won't generate bowtie indices each time and use indices made in the first run.
+- Change your file names to reflect their contents (better, copying them first), e.g., not CX99889_GATTC_R0.fastq.gz, but OvariesZucKD_rep1.fastq.gz.
+
+#### Disclaimer
+This software tool is currently under development. Users assume all risks related to its use.
 If you have any problems, open an issue here or [email me](mailto:liartom2@gmail.com)
