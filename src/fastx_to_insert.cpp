@@ -40,10 +40,28 @@ bool isValidExtension(const std::string& filename) {
 	return baseExt == "fq" || baseExt == "fastq" || baseExt == "fa" || baseExt == "fasta";
 }
 
+bool hasRepeatingNucleotides(const std::string& sequence, int threshold) {
+    if (sequence.length() < threshold) return false;
+    
+    char lastChar = sequence[0];
+    int count = 1;
+    
+    for (size_t i = 1; i < sequence.length(); ++i) {
+        if (sequence[i] == lastChar) {
+            ++count;
+            if (count >= threshold) return true;
+        } else {
+            lastChar = sequence[i];
+            count = 1;
+        }
+    }
+    return false;
+}
+
 int main(int argc, char** argv) {
     string usage = R"(
 usage:
-	fastxToInsert input.[fq|fa][.gz|.bz2] output.insert
+	fastxToInsert input.[fastq|fq|fasta|fa][.gz|.bz2] output.insert
 	
 	)";
     if (argc != 3) {
@@ -87,6 +105,8 @@ usage:
         if (line[0] == '@' || line[0] == '>') {
             isFasta = (line[0] == '>');
             if (!getline(in, sequence)) break;
+            // Skip sequences with 10 or more identical consecutive nucleotides
+            if (hasRepeatingNucleotides(sequence, 10)) continue;
             ++counter[sequence];
         }
         if (!isFasta) {

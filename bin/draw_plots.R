@@ -22,7 +22,7 @@ library(gridExtra)
 # plot for genome mapped reads' size distro
 genome_sd <- read.table(file.path(folder, "tables",
                                   paste0(file_pref,
-                                          "_genome_sd.txt")))
+                                          "_genome_uq_sd.txt")))
 mapperc <- read.table(file.path(folder, "tables", paste0(
   file_pref, "_map_stats.log"
 )))
@@ -47,9 +47,9 @@ te_sd_m <- read.table(file.path(folder, "tables", paste0(
 te_sd <- merge(te_sd_p, te_sd_m, by = 'V2', all = T)
 colnames(te_sd) <- c("len", "sense", "asense")
 p2 <- ggplot(te_sd, aes(x = len, y = sense/sum(c(sense,asense))*100))+
-  geom_bar(stat = 'identity', fill = 'darkred')+
+  geom_bar(stat = 'identity', fill = 'darkblue')+
   geom_bar(stat = 'identity', aes(x = len, y = -asense/sum(c(sense,asense))*100),
-           fill = 'darkblue')+
+           fill = 'darkred')+
   ylab("% reads")+
   xlab(NULL)+
   scale_x_continuous(breaks = te_sd$len)+
