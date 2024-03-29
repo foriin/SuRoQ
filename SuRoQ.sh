@@ -1,7 +1,8 @@
 #!/bin/env bash
 
-PS4='+ $(date "+%s.%N")\011 '
-set -x
+# Set up debug mode: echo every command run and timestamps for it
+# PS4='+ $(date "+%s.%N")\011 '
+# set -x
 
 # Function to display usage
 usage() {
