@@ -44,7 +44,7 @@ else
 fi
 
 echo "Mapping reads to genome..."
-bowtie -v 0 -r -a -p ${NCORES} -x ${OUT_DIR}/idx/genome_index -r ${OUT_DIR}/${READS_BASE}_reads.insert --al ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert -S 2>${OUT_DIR}/map/${READS_BASE}_genome.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam
+bowtie -v 0 -r -a --best --strata -p ${NCORES} -x ${OUT_DIR}/idx/genome_index -r ${OUT_DIR}/${READS_BASE}_reads.insert --al ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert -S 2>${OUT_DIR}/map/${READS_BASE}_genome.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam
 
 echo "Calculating percentage of reads mapped to genome..."
 MAPPED_READS_GENOME=$(grep -m 1 "reads with at least one alignment:" ${OUT_DIR}/map/${READS_BASE}_genome.map.log | awk '{print $9}' | tr -d '()' )
@@ -67,7 +67,7 @@ else
 fi
 
 echo "Mapping reads to TEs..."
-bowtie -v 0 -r -a -p ${NCORES} -x ${OUT_DIR}/idx/te_index -r ${OUT_DIR}/${READS_BASE}_reads.insert -S 2>${OUT_DIR}/map/${READS_BASE}_te.map.log | samtools sort - -o ${OUT_DIR}/map/${READS_BASE}_reads_te.bam
+bowtie -v 0 -r -a --best --strata -p ${NCORES} -x ${OUT_DIR}/idx/te_index -r ${OUT_DIR}/${READS_BASE}_reads.insert -S 2>${OUT_DIR}/map/${READS_BASE}_te.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_te.bam
 echo "Calculating percentage of reads mapped to TEs..."
 MAPPED_READS_TE=$(grep -m 1 "reads with at least one alignment:" ${OUT_DIR}/map/${READS_BASE}_te.map.log | awk '{print $9}' | tr -d '()' )
 echo -e "TE\t${MAPPED_READS_TE}" >> ${OUT_DIR}/tables/${READS_BASE}_map_stats.log
@@ -81,14 +81,14 @@ ${SUROQ_DIR}/bin/ping_pong -a ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 -b ${OU
 # Get Size Distro and PFM for + strand
 echo "Getting size distributions and PFMs for TE sense-mapped reads... (only unique reads)"
 # samtools view -F 20 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
-awk '$6 == "+" {print $7 "\t" $4}' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 | sort | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert
+awk '$6 == "+" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert
 awk '{print length($1)}' ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_sense.pfm
 
 # Get Size Distro and PFM for - strand
 echo "Getting size distributions and PFMs for TE antisense-mapped reads... (only unique reads)"
 # samtools view -f 16 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
-awk '$6 == "-" {print $7 "\t" $4}' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 | sort | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert
+awk '$6 == "-" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert
 awk '{print length($1)}' ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_asense.pfm
 
