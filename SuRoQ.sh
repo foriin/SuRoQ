@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+PS4='+ $(date "+%s.%N")\011 '
+set -x
+
 # Function to display usage
 usage() {
     echo "Usage: $0 <reads_file> <genome_fasta> <transposon_annotation_fasta> [NCORES] [OUTPUT_DIR]"
@@ -28,6 +31,7 @@ mkdir -p "${OUT_DIR}/tables"
 mkdir -p "${OUT_DIR}/plots"
 
 # Step 2: Convert reads to .insert format
+# This step also removes small RNAs that have homopolimer stretches
 echo "Converting reads to .insert format..."
 ${SUROQ_DIR}/bin/fastx_to_insert $READS_FILE ${OUT_DIR}/${READS_BASE}_reads.insert
 
@@ -40,7 +44,7 @@ else
 fi
 
 echo "Mapping reads to genome..."
-bowtie -v 0 -r -a -p ${NCORES} -x ${OUT_DIR}/idx/genome_index -r ${OUT_DIR}/${READS_BASE}_reads.insert -S 2>${OUT_DIR}/map/${READS_BASE}_genome.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam
+bowtie -v 0 -r -a --best --strata -p ${NCORES} -x ${OUT_DIR}/idx/genome_index -r ${OUT_DIR}/${READS_BASE}_reads.insert --al ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert -S 2>${OUT_DIR}/map/${READS_BASE}_genome.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam
 
 echo "Calculating percentage of reads mapped to genome..."
 MAPPED_READS_GENOME=$(grep -m 1 "reads with at least one alignment:" ${OUT_DIR}/map/${READS_BASE}_genome.map.log | awk '{print $9}' | tr -d '()' )
@@ -48,7 +52,12 @@ echo -e "GENOME\t${MAPPED_READS_GENOME}" > ${OUT_DIR}/tables/${READS_BASE}_map_s
 
 # Prepare size distribution of mapped reads
 echo "Preparing size distribution of mapped reads..."
-samtools view -q 1 ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_genome_sd.txt
+# bedtools bamtobed -i ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam > ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed
+# ${SUROQ_DIR}/bin/bed_to_bed2 ${OUT_DIR}/${READS_BASE}_reads.insert ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed > ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed2
+# sort -k7,7 ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed2 | cut -f 7,4 | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert
+
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert > ${OUT_DIR}/tables/${READS_BASE}_genome_uq_sd.txt
+awk '{len=length($1); freq=$2; for(i=0;i<freq;i++) print len}' ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert | sort -n | awk '{count[$1]++} END {for (len in count) print count[len], len}' | sort -k2,2n > ${OUT_DIR}/tables/${READS_BASE}_genome_all_sd.txt
 
 # Step 5: Prepare Bowtie index for TEs and map reads
 if [[ ! -f "${OUT_DIR}/idx/te_index.1.ebwt" ]]; then
@@ -59,7 +68,7 @@ else
 fi
 
 echo "Mapping reads to TEs..."
-bowtie -v 0 -r -a -p ${NCORES} -x ${OUT_DIR}/idx/te_index -r ${OUT_DIR}/${READS_BASE}_reads.insert -S 2>${OUT_DIR}/map/${READS_BASE}_te.map.log | samtools sort - -o ${OUT_DIR}/map/${READS_BASE}_reads_te.bam
+bowtie -v 0 -r -a --best --strata -p ${NCORES} -x ${OUT_DIR}/idx/te_index -r ${OUT_DIR}/${READS_BASE}_reads.insert -S 2>${OUT_DIR}/map/${READS_BASE}_te.map.log | samtools sort -@ ${NCORES} - -o ${OUT_DIR}/map/${READS_BASE}_reads_te.bam
 echo "Calculating percentage of reads mapped to TEs..."
 MAPPED_READS_TE=$(grep -m 1 "reads with at least one alignment:" ${OUT_DIR}/map/${READS_BASE}_te.map.log | awk '{print $9}' | tr -d '()' )
 echo -e "TE\t${MAPPED_READS_TE}" >> ${OUT_DIR}/tables/${READS_BASE}_map_stats.log
@@ -72,14 +81,16 @@ echo "Getting ping-pong signature data..."
 ${SUROQ_DIR}/bin/ping_pong -a ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 -b ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 -p ${NCORES} > ${OUT_DIR}/tables/${READS_BASE}_te_mapped.pp
 # Get Size Distro and PFM for + strand
 echo "Getting size distributions and PFMs for TE sense-mapped reads... (only unique reads)"
-samtools view -F 20 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
-awk '$6 == "+" {print $7 "\t" $4}' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 | sort | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert
+# samtools view -F 20 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
+awk '$6 == "+" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_sense.pfm
 
 # Get Size Distro and PFM for - strand
 echo "Getting size distributions and PFMs for TE antisense-mapped reads... (only unique reads)"
-samtools view -f 16 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
-awk '$6 == "-" {print $7 "\t" $4}' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 | sort | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert
+# samtools view -f 16 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
+awk '$6 == "-" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_asense.pfm
 
 # Prepare a plot
