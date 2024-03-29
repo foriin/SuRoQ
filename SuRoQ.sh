@@ -55,7 +55,8 @@ echo "Preparing size distribution of mapped reads..."
 # bedtools bamtobed -i ${OUT_DIR}/map/${READS_BASE}_reads_genome.bam > ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed
 # ${SUROQ_DIR}/bin/bed_to_bed2 ${OUT_DIR}/${READS_BASE}_reads.insert ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed > ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed2
 # sort -k7,7 ${OUT_DIR}/map/${READS_BASE}_reads_genome.bed2 | cut -f 7,4 | uniq > ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert
-awk '{print length($1)}' ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_genome_uq_sd.txt
+
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert > ${OUT_DIR}/tables/${READS_BASE}_genome_uq_sd.txt
 awk '{len=length($1); freq=$2; for(i=0;i<freq;i++) print len}' ${OUT_DIR}/map/${READS_BASE}_reads_genome.insert | sort -n | awk '{count[$1]++} END {for (len in count) print count[len], len}' | sort -k2,2n > ${OUT_DIR}/tables/${READS_BASE}_genome_all_sd.txt
 
 # Step 5: Prepare Bowtie index for TEs and map reads
@@ -82,14 +83,14 @@ ${SUROQ_DIR}/bin/ping_pong -a ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 -b ${OU
 echo "Getting size distributions and PFMs for TE sense-mapped reads... (only unique reads)"
 # samtools view -F 20 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
 awk '$6 == "+" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert
-awk '{print length($1)}' ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_sense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_sense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_sense.pfm
 
 # Get Size Distro and PFM for - strand
 echo "Getting size distributions and PFMs for TE antisense-mapped reads... (only unique reads)"
 # samtools view -f 16 ${OUT_DIR}/map/${READS_BASE}_reads_te.bam | awk '{print length($10)}' | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
 awk '$6 == "-" { if (!seen[$7, $4]++) print $7 "\t" $4 }' ${OUT_DIR}/map/${READS_BASE}_reads_te.bed2 > ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert
-awk '{print length($1)}' ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert | sort | uniq -c > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
+awk '{lengths[length($1)]++} END {for (len in lengths) print lengths[len], len}' ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_asense_sd.txt
 ${SUROQ_DIR}/bin/insert_to_pfm ${OUT_DIR}/map/${READS_BASE}_reads_te_asense.insert > ${OUT_DIR}/tables/${READS_BASE}_te_map_asense.pfm
 
 # Prepare a plot
