@@ -3,6 +3,8 @@ SuRoQ requires only your demultiplexed and adapter-trimmed reads in FASTQ or FAS
 - Reads size distribution for those that mapped to genome and TEs (NOT mutually exclusive!).  For TEs, blue bars indicate sense-mapped reads, while red bars represent antisense-mapped reads. Only unique reads are used for the size distributions, ensuring that each small RNA is counted only once. This method, while may be not perfect, mitigates potential effects from high numbers of specific small RNAs that could skew the distribution.
 - WebLogo (seqLogo) plots for sense and antisense TE-mapped reads, useful for validating the U1- and A10-bias.
 - Ping-pong signature with Z score for 10-nt overlap indicated in the title.
+
+**NB**: As a first step, SuRoQ removes reads containing homopolymer stretches of at least 10 nt, e.g. AAAAAAAAAA.
   
 <img src=https://github.com/foriin/SuRoQ/blob/main/example/suroq_output.png width="600">
 
