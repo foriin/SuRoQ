@@ -1,6 +1,6 @@
 # SuRoQ (Small RNA Quality) - a pipeline for quick and dirty QC of your small RNA (piRNA-oriented) sequencing data
 SuRoQ requires only your demultiplexed and adapter-trimmed reads in FASTQ or FASTA format (gzip and bz2 compression are supported), genome assembly FASTA and TE consensus sequences FASTA. It produces three kinds of plots:
-- Reads size distribution for those that mapped to genome and TEs (NOT mutually exclusive!). For TEs red bars designate sense-mapped reads, and blue bars refer to antisense-mapped reads.
+- Reads size distribution for those that mapped to genome and TEs (NOT mutually exclusive!).  For TEs, blue bars indicate sense-mapped reads, while red bars represent antisense-mapped reads. Only unique reads are used for the size distributions, ensuring that each small RNA is counted only once. This method, while may be not perfect, mitigates potential effects from high numbers of specific small RNAs that could skew the distribution.
 - WebLogo (seqLogo) plots for sense and antisense TE-mapped reads, useful for validating the U1- and A10-bias.
 - Ping-pong signature with Z score for 10-nt overlap indicated in the title.
   
