@@ -37,6 +37,7 @@ After completion, you will find the plot in the `plots` directory and all the fi
 ### Tips
 - Run SuRoQ for all your samples using the same output directory. That way, it won't generate bowtie indices each time and use indices made in the first run.
 - Change your file names to reflect their contents (better, copying them first), e.g., not CX99889_GATTC_R0.fastq.gz, but OvariesZucKD_rep1.fastq.gz.
+- The more cores you use the faster the program runs ¯\_(ツ)_/¯
 
 #### Disclaimer
 This software tool is currently under development. Users assume all risks related to its use.
