@@ -19,7 +19,7 @@ Then, use suroq.yml file to prepare a conda environment (I use [mamba](https://a
 ```
 mamba env create -f suroq.yml
 ```
-If you don't want to set a conda environment, here's the list of the software that you'll need:
+If you don't want to set a conda environment, here's the software list:
 - [bowtie](https://bowtie-bio.sourceforge.net/index.shtml)
 - [samtools](http://www.htslib.org/)
 - [bedtools](https://bedtools.readthedocs.io/en/latest/)
